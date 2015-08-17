@@ -24,12 +24,12 @@ public class CustomBuilder extends DocumentBuilder {
 
     @Override
     public void beginBlock(BlockType type, Attributes attributes) {
-        System.out.println("beginBlock() " + type.name() + " " + attributes.toString());
+        //System.out.println("beginBlock() " + type.name() + " " + attributes.toString());
     }
 
     @Override
     public void endBlock() {
-        System.out.println("endBlock()");
+        //System.out.println("endBlock()");
     }
 
     @Override

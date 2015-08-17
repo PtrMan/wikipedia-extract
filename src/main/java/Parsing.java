@@ -38,26 +38,31 @@ public class Parsing {
 
         @Override
         public void article(String title, String wikitext) {
+            System.out.println(title);
+
             markupParser.parse(wikitext);
 
 
             final String wikimediaParserResult = customBuilder.resultString.toString();
             final String afterRemovingWikimediaReferenceNotation = removeStringsBetween(wikimediaParserResult, "{{", "}}");
 
-            // TODO< parse with real xml parser to remove all xml things ? >
-            final String afterRemovingXml = removeStringsBetween(afterRemovingWikimediaReferenceNotation, "<ref", "</ref>");
+            // TODO< parse with real xml parser to remove all xml things, because findstring doesn't work >
+            final String afterRemovingXml = afterRemovingWikimediaReferenceNotation;
 
             final String lowercase = afterRemovingXml.toLowerCase();
+
+            final String withoutPunctation = removePunctation(lowercase);
 
             // TODO< better algorithm for getting all words >
             // TODO< get words >
 
-            final Set<String> keywords = getKeywords(lowercase);
+            final Set<String> keywords = getKeywords(withoutPunctation);
 
+            final String fileTitle = convertTitleToFilenameTitle(title);
 
             try {
                 Writer writer = null;
-                writer = new FileWriter(Entry.outputFolder + title + ".json");
+                writer = new FileWriter(Entry.outputFolder + fileTitle + ".json");
 
                 Gson gson = new GsonBuilder().create();
                 gson.toJson(keywords, writer);
@@ -69,6 +74,19 @@ public class Parsing {
 
             int x = 0;
         }
+
+        private static String removePunctation(final String input) {
+            final char[] replace = {',', '.', ';', ':', '(', ')', '-', '[', ']', '?', '!'};
+
+            String result = input;
+
+            for( final char iterationReplace : replace ) {
+                result = result.replace(iterationReplace, ' ');
+            }
+
+            return result;
+        }
+
 
         private MarkupParser markupParser;
         private CustomBuilder customBuilder;
@@ -93,6 +111,11 @@ public class Parsing {
         } catch (IOException e) {
             throw new RuntimeException();
         }
+    }
+
+    // helper
+    private static String convertTitleToFilenameTitle(String title) {
+        return title.replace('/','-');
     }
 
     // helper
@@ -129,10 +152,15 @@ public class Parsing {
                 final int afterStartIndex = startIndex + start.length();
                 final int endIndex = input.indexOf(end, afterStartIndex);
                 if(endIndex == -1) {
-                    throw new RuntimeException("");
+                    // HACK< if it can't find the end >
+                    result.append(input.substring(startIndex, input.length()-1));
+
+                    break;
+                }
+                else {
+                    currentIndex = endIndex + end.length();
                 }
 
-                currentIndex = endIndex + end.length();
             }
         }
 
