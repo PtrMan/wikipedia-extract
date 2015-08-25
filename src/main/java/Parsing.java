@@ -12,8 +12,12 @@ import javax.xml.parsers.SAXParserFactory;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -49,6 +53,12 @@ public class Parsing {
             // TODO< parse with real xml parser to remove all xml things, because findstring doesn't work >
             final String afterRemovingXml = afterRemovingWikimediaReferenceNotation;
 
+            // TODO< get all categories from Mediawiki >
+
+            // HACK< we add a \n for a simpler category extraction mechanism with regular expressions >
+            final String forCategoryExtraction = afterRemovingXml + "\n";
+
+
             final String lowercase = afterRemovingXml.toLowerCase();
 
             final String withoutPunctation = removePunctation(lowercase);
@@ -56,7 +66,10 @@ public class Parsing {
             // TODO< better algorithm for getting all words >
             // TODO< get words >
 
-            final Set<String> keywords = getKeywords(withoutPunctation);
+            JsonContainer jsonContainer = new JsonContainer();
+            jsonContainer.title = title;
+            jsonContainer.keywords = getKeywords(withoutPunctation);
+            jsonContainer.categories = getCategories(forCategoryExtraction);
 
             final String fileTitle = convertTitleToFilenameTitle(title);
 
@@ -65,7 +78,7 @@ public class Parsing {
                 writer = new FileWriter(Entry.outputFolder + fileTitle + ".json");
 
                 Gson gson = new GsonBuilder().create();
-                gson.toJson(keywords, writer);
+                gson.toJson(jsonContainer, writer);
 
                 writer.close();
             } catch (IOException e) {
@@ -82,6 +95,25 @@ public class Parsing {
 
             for( final char iterationReplace : replace ) {
                 result = result.replace(iterationReplace, ' ');
+            }
+
+            return result;
+        }
+
+        // TODO< move this into its own class >
+        private static List<String> getCategories(String mediawiki) {
+            List<String> result = new ArrayList<>();
+
+            Pattern categoryRegex = Pattern.compile("\\nCategory:([\\w\\ \\-\\(\\)]+)");
+
+            // for testing
+            //mediawiki = "\nCategory:aaxx bbvc\nCategory:bbbs";
+
+            final Matcher matcher = categoryRegex.matcher(mediawiki);
+
+            while (matcher.find()) {
+                final String category = matcher.group(1);
+                result.add(category);
             }
 
             return result;
